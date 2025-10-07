@@ -1,0 +1,33 @@
+name: CI for Flask Docker App
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: docker build -t flask-app .
+
+      - name: Run container (test)
+        run: docker run -d -p 5000:5000 --name flask-app flask-app
+
+      - name: Wait for Flask to start
+        run: sleep 5
+
+      - name: Test Flask endpoint
+        run: curl -f http://localhost:5000 || (docker logs flask-app && exit 1)
+
+      - name: Stop container
+        run: docker stop flask-app
